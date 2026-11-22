@@ -11,6 +11,8 @@
 - Status:
 
 ## Implementation and Tests
+- Shared definition on `main`: `problem.json`, `PROBLEM.md`, `cases.json`, unsolved starter(s).
+- Personal implementation and notes: the problem's practice branch.
 - Branch: `codex/<number>-<problem-slug>`
 - Implementation: `solution.go`
 - Cases: `cases.json`

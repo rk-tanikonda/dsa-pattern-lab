@@ -124,13 +124,29 @@ Check your current location with `pwd` and `git branch --show-current`.
 
 1. Work on only the current problem; keep implementation and journal together.
 2. When finished, review `git diff`, run tests, and commit your work on that branch.
-3. Integrate the finished branch into `main` from the checkout that owns `main`.
-4. Start the next problem from the updated `main` with
+3. Keep your completed solution and personal notes on the problem branch. Apply
+   reusable fixture or infrastructure fixes separately to `main`.
+4. Add the next problem's reusable definition and unsolved starter to `main`, then
+   start its practice branch from the updated `main` with
    `git switch -c codex/<number>-<problem-slug> main`.
 
 Create branches only when starting a problem. Do not switch away with uncommitted
 work. In a linked worktree, `main` may already be checked out elsewhere; use
 `git worktree list` to find that checkout. No push is required for local practice.
+
+## Future web interface
+
+The UI will be built later. Today the reusable catalog and execution results are
+available without starting a web server:
+
+```sh
+python3 tools/catalog.py
+python3 tools/run.py --json
+```
+
+See the [architecture and versioned contracts](docs/architecture.md) and
+[future product requirements](docs/future-product.md). The execution engine is a
+trusted local tool; a public code runner requires a separate isolated service.
 
 ## Learning records
 

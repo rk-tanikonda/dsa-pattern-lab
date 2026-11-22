@@ -1,6 +1,8 @@
 """Runner checks use temporary programs, never a solved exercise."""
 
 import json
+import contextlib
+import io
 from pathlib import Path
 import shutil
 import subprocess
@@ -8,7 +10,8 @@ import sys
 import tempfile
 import unittest
 
-from tools.run import check_output, prepare_cases, SetupError
+from tools.lab_runner import check_output, prepare_cases, run_solution, SetupError
+from tools.catalog import load_catalog
 
 RUNNER = Path(__file__).with_name("run.py")
 
@@ -89,6 +92,66 @@ class RunnerTests(unittest.TestCase):
             prepare_cases({"checker": "two_sum_indices", "cases": [
                 {"name": "no pair", "nums": [1, 2], "target": 9}
             ]})
+
+    def test_json_results_cover_success_and_failures(self):
+        scenarios = [
+            ("print('0 1')", (), 0, "passed", "passed"),
+            ("pass", (), 1, "failed", "wrong_answer"),
+            ("raise SystemExit(3)", (), 1, "failed", "runtime_error"),
+            ("import time; time.sleep(10)", ("--timeout", "0.05"), 1, "failed", "timeout"),
+            ("pass", ("--run", "dsa-nonexistent-tool-123"), 2, "setup_error", None),
+            ("pass", ("--check-build",), 0, "setup_ok", None),
+        ]
+        for program, args, code, status, case_status in scenarios:
+            with self.subTest(status=status, case_status=case_status):
+                result = self.invoke(program, ".py", "--json", *args)
+                report = json.loads(result.stdout)
+                self.assertEqual(result.returncode, code)
+                self.assertEqual(report["exit_code"], code)
+                self.assertEqual(report["schema_version"], 1)
+                self.assertEqual(report["status"], status)
+                self.assertEqual(result.stderr, "")
+                if case_status:
+                    self.assertEqual(report["cases"][0]["status"], case_status)
+                else:
+                    self.assertEqual(report["cases"], [])
+
+    def test_engine_returns_build_diagnostics_without_printing(self):
+        source = self.directory / "solution.custom"
+        source.write_text("print('0 1')")
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            report = run_solution(source,
+                                  compile_command=[sys.executable, "-c", "import sys; print('build output'); print('build warning', file=sys.stderr)"],
+                                  run_command=[sys.executable, "{source}"])
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual(report["build"]["status"], "passed")
+        self.assertEqual(report["build"]["stdout"], "build output\n")
+        self.assertEqual(report["build"]["stderr"], "build warning\n")
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_json_compile_error(self):
+        result = self.invoke("", ".custom", "--json", "--compile",
+                             f'"{sys.executable}" -c "raise SystemExit(7)"',
+                             "--run", f'"{sys.executable}" "{{source}}"')
+        report = json.loads(result.stdout)
+        self.assertEqual(report["status"], "setup_error")
+        self.assertEqual(report["build"]["status"], "failed")
+        self.assertEqual(result.returncode, 2)
+
+    def test_catalog_validates_references_and_shared_cases(self):
+        catalog = load_catalog()
+        self.assertEqual(catalog["schema_version"], 1)
+        self.assertIn("001-two-sum", [p["id"] for p in catalog["problems"]])
+        problem = self.directory / "problems/example"
+        problem.mkdir(parents=True)
+        metadata = dict(catalog["problems"][0])
+        metadata["description"] = "../../outside.md"
+        (self.directory / "outside.md").write_text("outside problem folder")
+        (problem / "problem.json").write_text(json.dumps(metadata))
+        with self.assertRaises(SetupError):
+            load_catalog(self.directory)
 
     def test_go_and_c_input_output(self):
         # Echo the first input integers; this is not a Two Sum implementation.
