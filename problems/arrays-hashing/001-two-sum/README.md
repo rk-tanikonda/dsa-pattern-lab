@@ -8,7 +8,7 @@
 **Problem:** [Two Sum — LeetCode #1](https://leetcode.com/problems/two-sum/)  
 **Started:** November 22, 2026  
 **Status:** In Progress  
-**Language:** TypeScript
+**Primary language:** Go (other languages use the same shared cases)
 
 ### Description
 
@@ -18,7 +18,7 @@ Assume exactly one valid solution exists. The same array element cannot be used 
 
 ### Example
 
-```typescript
+```text
 Input:
 nums = [3, 2, 4]
 target = 6
@@ -267,26 +267,28 @@ I will explore these questions after successfully implementing and testing the b
 ## 9. Implementation and Testing
 
 **Implementation:** Pending  
-**Automated tests:** Initial test created  
+**Automated tests:** Seven shared cases ready
+
 **Independent solution:** Pending
 
 ### Files
 
-- `solution.ts` — My implementation
-- `solution.test.ts` — Automated test cases
+- `solution.go` — My Go starter (unsolved)
+- `c/solution.c` — Optional C starter (unsolved)
+- `cases.json` — Shared language-neutral test cases
 - `README.md` — My reasoning and learning journal
 
-### Test Command
+### Test Command (from the repository root)
 
 ```bash
-yarn test
+python3 tools/run.py
 ```
 
 ### Completion Criteria
 
 - [ ] Implement the brute-force solution independently
-- [ ] Pass the existing test
-- [ ] Add edge-case tests
+- [ ] Pass the shared cases
+- [ ] Add an edge-case test of my own
 - [ ] Explain why the implementation works
 - [x] Understand unique pair combinations
 - [x] Understand O(n²) worst-case time complexity
@@ -333,4 +335,4 @@ Questions I will answer:
 - Can I explain the algorithm without looking at my code?
 - Can I solve a similar unseen problem using the same reasoning?
 
-**Current status:** I understand the brute-force strategy and its complexity. My next task is to implement it independently in TypeScript.
+**Current status:** I understand the brute-force strategy and its complexity. My next task is to implement it independently in Go.

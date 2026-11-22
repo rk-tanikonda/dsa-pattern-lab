@@ -1,6 +1,7 @@
 # Problem: [Name]
 
 ## Metadata
+- Language: Go (default; choose another if desired)
 - Date:
 - Difficulty:
 - Source:
@@ -8,6 +9,13 @@
 - Time spent:
 - Hints used:
 - Status:
+
+## Implementation and Tests
+- Branch: `codex/<number>-<problem-slug>`
+- Implementation: `solution.go`
+- Cases: `cases.json`
+- Command: `python3 tools/run.py problems/<category>/<number>-<problem-slug>/solution.go`
+- Start with a stub; implement independently before requesting a full solution.
 
 ## What?
 Explain the problem in your own words.

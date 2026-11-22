@@ -1,11 +1,10 @@
-# Dependencies
-node_modules/
-
-# Build outputs
-dist/
-build/
-coverage/
-*.tsbuildinfo
+# Go build and test outputs
+/bin/
+*.test
+coverage.out
+coverage.html
+__pycache__/
+*.pyc
 
 # Environment variables and secrets
 .env
@@ -14,8 +13,6 @@ coverage/
 
 # Logs
 *.log
-yarn-error.log
-yarn-debug.log
 
 # macOS
 .DS_Store
