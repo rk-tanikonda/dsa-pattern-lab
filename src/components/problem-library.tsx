@@ -10,13 +10,14 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { problems, patterns, getPattern } from "@/lib/catalog";
+import { useCatalog } from "./learning-provider";
 import { useLearning } from "./learning-provider";
 export function ProblemLibrary({
   initialPattern = "all",
 }: {
   initialPattern?: string;
 }) {
+  const { patterns, problems, getPattern } = useCatalog();
   const [query, setQuery] = useState(""),
     [pattern, setPattern] = useState(initialPattern),
     [difficulty, setDifficulty] = useState("all"),

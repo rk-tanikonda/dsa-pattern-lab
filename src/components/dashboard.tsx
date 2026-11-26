@@ -14,9 +14,10 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import { patterns, problems, getPattern } from "@/lib/catalog";
+import { useCatalog } from "./learning-provider";
 import { useLearning } from "./learning-provider";
 export function Dashboard() {
+  const { patterns, problems, getPattern } = useCatalog();
   const { state, name, signedIn, loading, error, refresh } = useLearning();
   const solved = state.progress.filter((p) => p.status === "solved");
   const current =

@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Download, NotebookPen, Search, BookOpen } from "lucide-react";
-import { getProblem, getPattern } from "@/lib/catalog";
+import { useCatalog } from "./learning-provider";
 import { useLearning } from "./learning-provider";
 export function Notebook() {
+  const { getProblem, getPattern } = useCatalog();
   const { state, signedIn, loading, error } = useLearning();
   const [query, setQuery] = useState("");
   const notes = state.notes

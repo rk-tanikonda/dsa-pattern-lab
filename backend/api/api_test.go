@@ -28,7 +28,7 @@ func call(h http.Handler, method, path, body, token string) *httptest.ResponseRe
 }
 func TestHealthAndCatalog(t *testing.T) {
 	h := New(Config{})
-	for _, path := range []string{"/healthz", "/v1/catalog"} {
+	for _, path := range []string{"/healthz"} {
 		w := call(h, "GET", path, "", "")
 		if w.Code != 200 {
 			t.Fatalf("%s: %d", path, w.Code)
@@ -51,6 +51,10 @@ func TestAuthenticationAndOwnership(t *testing.T) {
 				return
 			}
 			write(w, 200, map[string]string{"id": "user-a"})
+			return
+		}
+		if r.URL.Path == "/rest/v1/rpc/has_paid_access" {
+			write(w, 200, true)
 			return
 		}
 		storageCalls.Add(1)
@@ -83,6 +87,10 @@ func TestDraftValidationAndPreserveSolved(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/auth/v1/user" {
 			write(w, 200, map[string]string{"id": "user-a"})
+			return
+		}
+		if r.URL.Path == "/rest/v1/rpc/has_paid_access" {
+			write(w, 200, true)
 			return
 		}
 		if r.Method == "GET" {
@@ -135,87 +143,85 @@ func TestCheckers(t *testing.T) {
 		t.Fatal("null passed array checker")
 	}
 }
-func TestJudgeBatchAndStorageFailure(t *testing.T) {
+func TestSandboxCompletionAndStorageFailure(t *testing.T) {
 	for _, storageFails := range []bool{false, true} {
-		t.Run(map[bool]string{false: "saved", true: "storage unavailable"}[storageFails], func(t *testing.T) {
-			var stored map[string]any
-			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path == "/auth/v1/user" {
-					write(w, 200, map[string]string{"id": "user-a"})
-					return
-				}
-				if r.URL.Path != "/rest/v1/rpc/record_run" {
-					t.Errorf("unexpected storage path: %s", r.URL.Path)
-				}
-				json.NewDecoder(r.Body).Decode(&stored)
-				if storageFails {
-					w.WriteHeader(500)
-				} else {
-					w.WriteHeader(204)
-				}
-			}))
-			defer upstream.Close()
-			answers := []string{"[1,0]", "[2,1]", "[1,0]", "[2,0]"}
-			executor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Header.Get("X-Auth-Token") != "executor-key" {
-					t.Error("missing executor token")
-				}
-				if r.Method == "POST" {
-					var data struct {
-						Submissions []map[string]any `json:"submissions"`
-					}
-					json.NewDecoder(r.Body).Decode(&data)
-					if len(data.Submissions) != 4 {
-						t.Fatal("unexpected fixture count")
-					}
-					for _, s := range data.Submissions {
-						if s["enable_network"] != false || s["cpu_time_limit"] != float64(2) || s["max_file_size"] != float64(64) {
-							t.Error("missing sandbox limits")
-						}
-					}
-					write(w, 201, []map[string]string{{"token": "a"}, {"token": "b"}, {"token": "c"}, {"token": "d"}})
-					return
-				}
-				// Return reversed order to exercise token association.
-				result := []map[string]any{}
-				for i := 3; i >= 0; i-- {
-					result = append(result, map[string]any{"token": string(rune('a' + i)), "stdout": base64.StdEncoding.EncodeToString([]byte(answers[i])), "status": map[string]any{"id": 3, "description": "Accepted"}})
-				}
-				write(w, 200, map[string]any{"submissions": result})
-			}))
-			defer executor.Close()
-			h := New(Config{SupabaseURL: upstream.URL, SupabaseKey: "public-key", JudgeURL: executor.URL, JudgeToken: "executor-key", Languages: map[string]int{"go": 60}})
-			w := call(h, "POST", "/v1/run", `{"problem_id":"two-sum","language":"go","code":"source"}`, "valid")
-			var result struct {
-				Passed  int    `json:"passed"`
-				Saved   bool   `json:"saved"`
-				Warning string `json:"warning"`
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/auth/v1/user" {
+				write(w, 200, map[string]string{"id": "user-a"})
+				return
 			}
-			json.Unmarshal(w.Body.Bytes(), &result)
-			if w.Code != 200 || result.Passed != 4 || result.Saved == storageFails || stored["p_passed"] != true {
-				t.Fatalf("bad run result %d %s", w.Code, w.Body.String())
+			if r.URL.Path == "/rest/v1/rpc/has_paid_access" {
+				write(w, 200, true)
+				return
 			}
-			if storageFails && result.Warning == "" {
-				t.Fatal("storage failure should be visible")
+			if r.URL.Path != "/rest/v1/rpc/record_run" {
+				t.Errorf("unexpected path: %s", r.URL.Path)
 			}
-		})
+			if storageFails {
+				w.WriteHeader(500)
+			} else {
+				w.WriteHeader(204)
+			}
+		}))
+		h := New(Config{SupabaseURL: upstream.URL, SupabaseKey: "public-key", Languages: map[string]int{"go": 1}})
+		outputs := []executionOutput{}
+		for _, answer := range []string{"[1,0]", "[2,1]", "[1,0]", "[2,0]"} {
+			outputs = append(outputs, executionOutput{Stdout: base64.StdEncoding.EncodeToString([]byte(answer))})
+		}
+		body, _ := json.Marshal(map[string]any{"problem_id": "two-sum", "language": "go", "code": "source", "outputs": outputs})
+		w := call(h, "POST", "/v1/complete", string(body), "valid")
+		var result struct {
+			Passed  int    `json:"passed"`
+			Saved   bool   `json:"saved"`
+			Warning string `json:"warning"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &result)
+		if w.Code != 200 || result.Passed != 4 || result.Saved == storageFails || (storageFails && result.Warning == "") {
+			t.Fatalf("bad result: %s", w.Body.String())
+		}
+		outputs[0].ExitCode = 124
+		body, _ = json.Marshal(map[string]any{"problem_id": "two-sum", "language": "go", "code": "source", "outputs": outputs})
+		w = call(h, "POST", "/v1/complete", string(body), "valid")
+		json.Unmarshal(w.Body.Bytes(), &result)
+		if result.Passed != 3 {
+			t.Fatal("timed out execution must not pass")
+		}
+		w = call(h, "POST", "/v1/complete", `{"problem_id":"two-sum","language":"go","code":"source","outputs":[]}`, "valid")
+		if w.Code != 400 {
+			t.Fatal("incomplete results accepted")
+		}
+		upstream.Close()
 	}
 }
-func TestExecutorFailureAndRateLimit(t *testing.T) {
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { write(w, 200, map[string]string{"id": "user-a"}) }))
-	defer upstream.Close()
-	executor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(503) }))
-	defer executor.Close()
-	h := New(Config{SupabaseURL: upstream.URL, SupabaseKey: "public-key", JudgeURL: executor.URL, Languages: map[string]int{"go": 60}})
-	for i := 0; i < 6; i++ {
-		w := call(h, "POST", "/v1/run", `{"problem_id":"two-sum","language":"go","code":"source"}`, "valid")
-		want := 502
-		if i == 5 {
-			want = 429
+func TestSharedRunQuota(t *testing.T) {
+	for _, status := range []int{200, 429, 503} {
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/auth/v1/user" {
+				write(w, 200, map[string]string{"id": "user-a"})
+				return
+			}
+			if r.URL.Path == "/rest/v1/rpc/has_paid_access" {
+				write(w, 200, true)
+				return
+			}
+			if r.URL.Path != "/rest/v1/rpc/consume_run_slot" {
+				t.Errorf("unexpected path: %s", r.URL.Path)
+			}
+			if status == 503 {
+				w.WriteHeader(500)
+			} else {
+				write(w, 200, status == 200)
+			}
+		}))
+		h := New(Config{SupabaseURL: upstream.URL, SupabaseKey: "public-key", Languages: map[string]int{"go": 1}})
+		w := call(h, "POST", "/v1/prepare", `{"problem_id":"two-sum","language":"go","code":"source"}`, "valid")
+		if w.Code != status {
+			t.Errorf("got %d want %d: %s", w.Code, status, w.Body.String())
 		}
-		if w.Code != want {
-			t.Errorf("run %d status %d, want %d", i, w.Code, want)
+		if strings.Contains(w.Body.String(), "expected") {
+			t.Fatal("expected answers should not enter sandbox")
 		}
+		upstream.Close()
 	}
 }
 func TestCatalogAndFixtureIntegrity(t *testing.T) {
@@ -266,6 +272,10 @@ func TestDatabaseFailureIsNotEmptySuccess(t *testing.T) {
 			write(w, 200, map[string]string{"id": "user-a"})
 			return
 		}
+		if r.URL.Path == "/rest/v1/rpc/has_paid_access" {
+			write(w, 200, true)
+			return
+		}
 		w.WriteHeader(500)
 	}))
 	defer upstream.Close()
@@ -301,5 +311,46 @@ func TestStorageUsesUserToken(t *testing.T) {
 	err := s.db(context.Background(), "POST", "notes", "private-user-token", map[string]string{"body": "private"}, nil)
 	if err != nil || !reflect.DeepEqual(got, "Bearer private-user-token") {
 		t.Fatal("user-scoped storage auth was lost")
+	}
+}
+
+func TestPaidAccessBoundary(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		anonymous   bool
+		paid        bool
+		unavailable bool
+		want        int
+	}{
+		{"unpaid", false, false, false, 402}, {"anonymous", true, true, false, 401},
+		{"membership outage", false, false, true, 503}, {"paid", false, true, false, 200},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/auth/v1/user" {
+					write(w, 200, map[string]any{"id": "user-a", "is_anonymous": tc.anonymous})
+					return
+				}
+				if r.URL.Path == "/rest/v1/rpc/has_paid_access" {
+					if tc.unavailable {
+						w.WriteHeader(500)
+					} else {
+						write(w, 200, tc.paid)
+					}
+					return
+				}
+				if tc.want != 200 {
+					t.Error("unpaid request reached learning storage")
+				}
+				write(w, 200, []any{})
+			}))
+			defer upstream.Close()
+			h := New(Config{SupabaseURL: upstream.URL, SupabaseKey: "key"})
+			for _, path := range []string{"/v1/state", "/v1/catalog"} {
+				if w := call(h, "GET", path, "", "valid"); w.Code != tc.want {
+					t.Errorf("%s: got %d want %d", path, w.Code, tc.want)
+				}
+			}
+		})
 	}
 }

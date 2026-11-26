@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && go test ./... && go vet ./...",
-    "format": "prettier --write src next.config.ts package.json tsconfig.json .github/workflows/ci.yml"
+    "check": "npm run typecheck && npm run test:membership && go test ./... && go vet ./...",
+    "format": "prettier --write src next.config.ts package.json tsconfig.json .github/workflows/ci.yml",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "sandbox:prepare": "node --env-file=.env.local scripts/prepare-sandbox.mjs",
+    "test:membership": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@codemirror/lang-go": "^6.0.1",
@@ -20,16 +23,23 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.84.0",
     "@uiw/react-codemirror": "^4.25.0",
+    "@vercel/sandbox": "^5.0.0",
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "stripe": "^23.2.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0",
     "@types/node": "^22.19.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "postgres": "^4.1.1",
     "prettier": "^3.10.1",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "@vercel/oidc": "4.0.9"
   }
 }

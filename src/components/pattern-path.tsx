@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { CheckCircle2, Circle, Layers3 } from "lucide-react";
-import { patterns, problems } from "@/lib/catalog";
+import { useCatalog } from "./learning-provider";
 import { useLearning } from "./learning-provider";
 export function PatternPath() {
+  const { patterns, problems } = useCatalog();
   const { state } = useLearning();
   return (
     <>

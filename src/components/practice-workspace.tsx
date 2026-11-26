@@ -1,4 +1,5 @@
 "use client";
+import { useCatalog } from "./learning-provider";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,12 +21,7 @@ import {
   Save,
   XCircle,
 } from "lucide-react";
-import {
-  type Problem,
-  type Language,
-  getPattern,
-  problems,
-} from "@/lib/catalog";
+import { type Problem, type Language } from "@/lib/catalog";
 import { useLearning } from "./learning-provider";
 import { ConfirmDialog } from "./confirm-dialog";
 const CodeEditor = dynamic(() => import("./code-editor"), {
@@ -49,6 +45,7 @@ type RunResult = {
 const noteTemplate =
   "## My approach\n\n\n## What clicked\n\n\n## Edge cases & mistakes\n\n\n## Time & space complexity\n\n";
 export function PracticeWorkspace({ problem }: { problem: Problem }) {
+  const { problems, getPattern } = useCatalog();
   const router = useRouter();
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
     null,

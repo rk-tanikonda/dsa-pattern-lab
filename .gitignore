@@ -32,3 +32,5 @@ node_modules/
 out/
 .vercel/
 *.tsbuildinfo
+.vercel
+.env*

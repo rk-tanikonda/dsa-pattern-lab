@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,8 +18,8 @@ import (
 )
 
 type Config struct {
-	SupabaseURL, SupabaseKey, JudgeURL, JudgeToken string
-	Languages                                      map[string]int
+	SupabaseURL, SupabaseKey string
+	Languages                map[string]int
 }
 type Server struct {
 	config Config
@@ -54,13 +53,7 @@ type note struct {
 }
 
 func Environment() Config {
-	ids := map[string]int{"go": 60, "python": 71, "javascript": 63}
-	for lang := range ids {
-		if id, err := strconv.Atoi(os.Getenv("JUDGE0_" + strings.ToUpper(lang) + "_ID")); err == nil && id > 0 {
-			ids[lang] = id
-		}
-	}
-	return Config{strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"), os.Getenv("SUPABASE_PUBLISHABLE_KEY"), strings.TrimRight(os.Getenv("JUDGE0_URL"), "/"), os.Getenv("JUDGE0_AUTH_TOKEN"), ids}
+	return Config{SupabaseURL: strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"), SupabaseKey: os.Getenv("SUPABASE_PUBLISHABLE_KEY"), Languages: map[string]int{"go": 1, "python": 1, "javascript": 1}}
 }
 func New(config Config) http.Handler {
 	s := &Server{config: config, client: &http.Client{Timeout: 8 * time.Second}, cases: map[string][]testCase{}, limits: map[string]quota{}, slots: make(chan struct{}, 8)}
@@ -69,17 +62,19 @@ func New(config Config) http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		write(w, 200, map[string]any{"status": "ok", "accounts_configured": config.SupabaseURL != "" && config.SupabaseKey != "", "execution_configured": config.JudgeURL != ""})
+		write(w, 200, map[string]any{"status": "ok", "accounts_configured": config.SupabaseURL != "" && config.SupabaseKey != ""})
 	})
-	mux.HandleFunc("GET /v1/catalog", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "public, max-age=3600")
+	mux.HandleFunc("GET /v1/catalog", s.protect(func(w http.ResponseWriter, r *http.Request, user, token string) {
+		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(content.Catalog)
-	})
+	}))
 	mux.HandleFunc("GET /v1/state", s.protect(s.state))
 	mux.HandleFunc("PUT /v1/progress/{id}", s.protect(s.saveProgress))
 	mux.HandleFunc("PUT /v1/notes/{id}", s.protect(s.saveNote))
-	mux.HandleFunc("POST /v1/run", s.protect(s.run))
+	// These routes are private Vercel service endpoints, never public rewrites.
+	mux.HandleFunc("POST /v1/prepare", s.protect(s.prepareRun))
+	mux.HandleFunc("POST /v1/complete", s.protect(s.completeRun))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Cache-Control", "private, no-store")
@@ -140,7 +135,8 @@ func (s *Server) protect(next func(http.ResponseWriter, *http.Request, string, s
 		}
 		defer resp.Body.Close()
 		var user struct {
-			ID string `json:"id"`
+			ID        string `json:"id"`
+			Anonymous bool   `json:"is_anonymous"`
 		}
 		if resp.StatusCode >= 500 {
 			fail(w, 503, "Authentication is temporarily unavailable.")
@@ -148,6 +144,19 @@ func (s *Server) protect(next func(http.ResponseWriter, *http.Request, string, s
 		}
 		if resp.StatusCode != 200 || json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&user) != nil || user.ID == "" {
 			fail(w, 401, "Your session expired. Please sign in again.")
+			return
+		}
+		if user.Anonymous {
+			fail(w, 401, "Sign in with a permanent account to continue.")
+			return
+		}
+		var paid bool
+		if err := s.db(r.Context(), "POST", "rpc/has_paid_access", token, map[string]any{}, &paid); err != nil {
+			fail(w, 503, "Membership verification is unavailable.")
+			return
+		}
+		if !paid {
+			fail(w, 402, "An active paid membership is required.")
 			return
 		}
 		if !s.allow(user.ID+":api", 120) {

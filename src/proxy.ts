@@ -28,5 +28,8 @@ export const config = {
     "/signup",
     "/reset-password",
     "/api/lab/:path*",
+    "/billing",
+    "/admin",
+    "/api/billing/:path*",
   ],
 };

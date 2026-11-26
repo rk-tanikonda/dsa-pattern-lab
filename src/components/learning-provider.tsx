@@ -6,8 +6,15 @@ import {
   useState,
   useCallback,
 } from "react";
-import { emptyState, type LearningState } from "@/lib/catalog";
+import {
+  emptyState,
+  type Problem,
+  type Pattern,
+  type LearningState,
+} from "@/lib/catalog";
+type Catalog = { problems: Problem[]; patterns: Pattern[] };
 type Context = {
+  catalog: Catalog;
   state: LearningState;
   loading: boolean;
   error: string;
@@ -19,10 +26,12 @@ type Context = {
 const LearningContext = createContext<Context | null>(null);
 export function LearningProvider({
   children,
+  catalog,
   signedIn,
   name,
 }: {
   children: React.ReactNode;
+  catalog: Catalog;
   signedIn: boolean;
   name: string;
 }) {
@@ -37,6 +46,9 @@ export function LearningProvider({
         body: body === undefined ? undefined : JSON.stringify(body),
       });
       const data = await response.json();
+      if (response.status === 401 || response.status === 402) {
+        window.location.assign(response.status === 401 ? "/login" : "/billing");
+      }
       if (!response.ok)
         throw new Error(data.error || "Unable to complete the request.");
       return data as T;
@@ -64,7 +76,16 @@ export function LearningProvider({
   }, [refresh]);
   return (
     <LearningContext.Provider
-      value={{ state, loading, error, signedIn, name, refresh, request }}
+      value={{
+        catalog,
+        state,
+        loading,
+        error,
+        signedIn,
+        name,
+        refresh,
+        request,
+      }}
     >
       {children}
     </LearningContext.Provider>
@@ -74,4 +95,13 @@ export function useLearning() {
   const context = useContext(LearningContext);
   if (!context) throw new Error("LearningProvider is required");
   return context;
+}
+
+export function useCatalog() {
+  const { catalog } = useLearning();
+  return {
+    ...catalog,
+    getProblem: (id: string) => catalog.problems.find((p) => p.id === id),
+    getPattern: (id: string) => catalog.patterns.find((p) => p.id === id)!,
+  };
 }

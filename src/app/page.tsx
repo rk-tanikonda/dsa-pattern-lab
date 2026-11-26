@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { patterns } from "@/lib/catalog";
+import { patterns } from "@/lib/catalog-server";
 export default function Home() {
   return (
     <div className="marketing">
@@ -21,7 +21,7 @@ export default function Home() {
         <nav aria-label="Main navigation">
           <a href="#approach">The approach</a>
           <a href="#patterns">Learning path</a>
-          <Link href="/learn/problems">Explore problems</Link>
+          <Link href="/pricing">Membership</Link>
         </nav>
         <div>
           <ThemeSwitch />
@@ -54,9 +54,9 @@ export default function Home() {
               <Link href="/signup" className="button primary">
                 Find your first breakthrough
               </Link>
-              <Link href="/learn" className="button outline">
+              <Link href="/pricing" className="button outline">
                 <Play size={16} />
-                Take a look inside
+                See membership plans
               </Link>
             </div>
             <div className="hero-meta">
@@ -282,8 +282,8 @@ export default function Home() {
           <Link href="/signup" className="button primary">
             Create your learning space
           </Link>
-          <Link href="/learn" className="cta-secondary">
-            Or explore first. Curiosity is enough.
+          <Link href="/pricing" className="cta-secondary">
+            Full access from ₹499/month. Choose your pace.
           </Link>
         </section>
       </main>

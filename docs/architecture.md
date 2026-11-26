@@ -1,40 +1,31 @@
 # Application architecture
 
-## Request flow
+## Identity and paid access
 
-Browser → Next.js App Router → same-origin `/api/lab/*` proxy → Go `/v1/*` → Supabase Postgres / isolated Judge0.
+Public homepage/pricing → Supabase account → Stripe Checkout → verified webhook → membership → learning workspace.
 
-Next.js renders the public homepage statically and server-renders learning pages. Supabase SSR uses cookies, refreshes sessions in `src/proxy.ts`, verifies claims for API requests, and exchanges confirmation/OAuth codes in `/auth/callback`. Auth redirects are limited to the learning dashboard and password reset page.
+Next.js verifies the current user on the server. Both the learning layout and each page invoke the shared access layer; partial navigation cannot bypass the check. APIs independently verify identity and membership. Anonymous identities are rejected. Billing remains accessible to unpaid users; administrators are explicit server-side UUIDs, with no free learning bypass.
 
-The Go API re-verifies the bearer identity with Supabase Auth. No request may choose its user ID. All database reads are explicitly owner-filtered and every request forwards the user's token; database row-level security enforces ownership independently. Notes and code have byte limits. Source, tokens, emails, and note contents are not written to application logs.
+The lesson catalog is imported only by server components. Its authenticated layout passes the data to client learning components. Public JavaScript bundles contain types and interactive code, not lesson JSON. Supabase RLS requires both ownership and a current paid entitlement for progress/notes. The Go API also re-verifies identity and calls the same database entitlement function; its catalog is private.
 
-## API
+## Learning and execution
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /healthz` | Liveness and configuration booleans; no credentials |
-| `GET /v1/catalog` | Public, cacheable problem catalog |
-| `GET /v1/state` | Signed-in user's progress and notes |
-| `PUT /v1/progress/:id` | Save code/language, optionally flag for review |
-| `PUT /v1/notes/:id` | Save Markdown/plain-text notes |
-| `POST /v1/run` | Execute server-owned cases through Judge0 and save results |
+Browser → Next.js `/api/lab/*` → private Go `/v1/*` → Supabase.
 
-API request bodies are capped at 128 KiB, code at 64,000 bytes, and notes at 32,000 bytes. The proxy allowlists paths and verifies the origin of browser mutations. The Go server has read/write/header/idle timeouts and graceful shutdown.
+A run follows Next.js → Go `prepare` (validate input and atomically reserve quota) → ephemeral Vercel Sandbox (deny outbound network) → Go `complete` (evaluate outputs and save progress). Only the trusted Next.js service should be able to call Go's prepare/complete endpoints; Vercel routes public traffic to the web service. Configure equivalent ingress restrictions if hosting elsewhere.
 
-Each run supports only the configured Go/Python/JavaScript language IDs. It submits base64-encoded code and server-selected JSON fixtures to Judge0's batch API, disables network access, sets CPU/memory/wall/output limits, and polls with a bounded deadline. Results are associated by token, not returned order. The Two Sum checker accepts either valid index order; other problems compare parsed JSON values. Failed execution is distinct from wrong answers and from storage failures.
+Bodies are bounded to 128 KiB, code to 64 KB, notes to 32 KB. Mutations require a matching Origin. Languages are allowlisted. The sandbox receives inputs and source, not expected answers or credentials. Go's Two Sum checker accepts either valid index order. `record_run` preserves prior solved status when a later run fails. Progress is private learning data, not an anti-cheating certificate.
 
-Per-process limits: 120 authenticated API requests and five test runs per user per minute, plus eight concurrent runs. These limits protect one API process, not a cluster. Enforce ingress limits and shared quotas before scaling horizontally. The executor must also enforce its own global queue, sandbox, retention, and resource policies.
+Shared Postgres quotas limit each paid member to 5 runs/minute, 50/day, and 500/calendar month (UTC). User-scoped advisory locks prevent concurrent reservations exceeding limits. Go additionally limits authenticated API traffic to 120 requests/minute per process.
 
-## Storage
+## Billing and usage
 
-Two compact tables: `progress` stores the latest draft and learning state per user/problem; `notes` stores one note per user/problem. Both use composite primary keys, ownership policies, length checks, and cascade deletion with the auth user. `record_run` atomically preserves earlier solved status when a later run fails. No code history or raw executor logs are retained in application storage.
+Stripe SDK calls are server-only. Checkout accepts a plan identifier, never a client-supplied amount or customer ID. It validates the configured Stripe price against the displayed INR plan, persists customer ownership, serializes checkout requests in Postgres, and reuses open sessions. Portal sessions use the authenticated user's stored customer mapping.
 
-Progress is private, self-reported learning data; RLS prevents cross-account access, but users can modify their own records through the public Supabase API. It is not a trusted leaderboard, grade, or certificate.
+Webhooks verify the signature on the raw request body, re-fetch current subscription state, and update entitlements through a service-role-only RPC. Positive paid invoices, recognized prices, active status, and unexpired periods are all required. Trials and free invoices do not unlock access. Event ordering and subscription identity protect against delayed cancellation events. Failed persistence returns non-2xx for retry. Refunds require an operator cancellation workflow; refunds alone do not automatically revoke access.
 
-Theme preference alone is stored in browser localStorage, shared between the marketing site and learning tool. Code and notes are held in editor memory until explicitly saved to the account. Nothing is submitted to the executor before the learner clicks Run tests.
+Usage events include client-reported learning page views and contain account ID, action/resource, time, outcome, and duration. They exclude source code and note text. Next.js records API attempts before executing learning operations; database functions/triggers record reserved runs, saves, and sign-ins. Members see only their own usage. The cross-account admin report requires both a server administrator allowlist and a service-role-only SQL function.
 
-## Rendering and design
+## UI
 
-Server components for page structure; client boundaries for search, editor, auth, learning state, and theme selection. The theme boot script sets the saved/system appearance before paint. The public theme tokens and semantic surfaces cover marketing, authentication, dashboard, forms, notes, and editor; media preference changes update System mode live. DM Sans and Manrope are bundled locally. Comic Sans uses the installed system font, with a self-hosted Comic Neue fallback.
-
-The editor and language modules are dynamically imported. Reduced-motion preferences are respected. Navigation has a skip link, buttons have accessible names, fields have labels, and errors and save results announce their status. Catalog modules are build-time content; private state is never publicly cached.
+DM Sans, Manrope, neutral surfaces, and indigo/lavender accents support light, dark, and system themes. The existing handwritten editor font is retained. The app includes the learning path, searchable library, hints, three-language editor, explicit saves, notebook/export, progress, billing, and usage. CodeMirror loads on demand. Theme preferences use localStorage; source and notes remain in editor memory until saved. Unsaved edits prompt before navigation. Mobile navigation, focus styling, status announcements, and reduced-motion preferences are preserved.

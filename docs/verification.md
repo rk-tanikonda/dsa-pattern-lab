@@ -1,38 +1,31 @@
-# Verification record
+# Verification — 26 November 2026
 
-## Build and backend checks
+## Paid access and usage
 
-Passed on this checkout:
+`npm run test:membership` passes nine tests: payment entitlement policy; signed webhook tampering/staleness; unpaid and anonymous denial; expired/delinquent/trial rejection; per-user SQL isolation; persisted minute/day/month run limits; event ordering and resubscription; serialized checkout locks/admin reporting; and bounded page-view analytics.
 
-- `npm run build`: production compilation, TypeScript validation, and static page generation.
-- `npm run typecheck`: strict TypeScript check.
-- `go test -race ./...`: backend tests with race detection.
-- `go vet ./...`.
-- `git diff --check`.
+SQL tests apply all migrations to a fresh, isolated PGlite Postgres instance with simulated Supabase auth roles. They execute the real functions, RLS policies, and triggers. They do not modify the linked Supabase database. Stripe signature tests use the official SDK and generated test signatures; they do not send real payments.
 
-The Go tests cover missing configuration, authenticated identity verification, rejection before storage access, forwarding of user-scoped tokens, explicit owner filters, malformed/oversized draft and note bodies, preserved solved status, missing problem IDs, Two Sum index-order and bounds checking, JSON result types, sandbox resource parameters, shuffled executor batch results, storage-failure warnings, executor failures, run quotas, and public/backend catalog consistency.
+The Go test suite passes with the race detector, including identity verification, paid access on state/catalog routes, ownership filters, validation, retained solved status, quota errors, executor result evaluation, and all catalog fixtures. `go vet ./...` passes.
 
-Supabase and Judge0 behavior in these tests is provided by local HTTP test doubles. No real credentials were present; these checks do not establish live authentication, actual database RLS, actual SQL trigger behavior, real execution isolation, or deployment readiness.
+## Interface checks
 
-## Browser checks
+Browser QA against an isolated local HTTP fixture verified:
 
-Observed in the local browser:
+- Signed-out learning requests redirect to login.
+- A simulated paid account reaches the dashboard and problem workspace.
+- Draft and note save actions complete, and saved notes appear on the dashboard after navigation.
+- A simulated unpaid account redirects to Billing & usage with the workspace locked.
+- Supported social-provider discovery and email/phone/SSO method controls render.
+- Membership pricing, account usage, light/dark appearance, and pricing at a 390px mobile viewport render correctly.
+- Low-contrast dashboard-card text and the billing-page heading layout were corrected and rechecked.
 
-- Public homepage and learning dashboard render.
-- Light and dark themes render on the homepage and editor.
-- Theme selection carries from the homepage into the learning workspace.
-- The Light/Dark/System options are available, with the current selection indicated.
-- Comic Sans renders in the editor, including syntax highlighting.
-- Search combined with the hashing filter returns only Two Sum for `two`.
-- Selecting Python changes the starter and filename.
-- Anonymous test execution shows a sign-in requirement without simulating a result.
-- Note reflection prompts populate the note editor.
-- Desktop workspace styling inspected at 1440 × 1000; ordinary preview inspected around 850 px wide.
+`tests/preview.mjs` is a **test-only HTTP fixture**, not a production backend or payment bypass. Its usage totals and future paid date are illustrative. UI checks do not establish real OAuth callbacks, SMS/SSO delivery, Stripe checkout/portal behavior, or real sandbox execution.
 
-The original native unsaved-work confirmation caused the preview browser to become unresponsive. It was replaced with an accessible in-app HTML dialog for navigation and code reset. The replacement compiles, but its final browser interaction test could not be completed after the preview browser stalled. Final narrow-mobile interaction checks, System mode changes triggered by the OS, and cross-tab theme synchronization remain unverified.
+## Build and boundaries
 
-## Live release requirements
+The production Next.js build and TypeScript checks pass. Lesson descriptions were checked against the production client chunks and are absent; content is imported server-side and supplied only after membership verification. Git whitespace checks pass.
 
-Apply the Supabase migration, configure email and GitHub authentication, deploy the Go API, and connect a sandboxed Judge0 service. Follow the real-account, two-user isolation, persistence, and execution checks in [deployment](deployment.md) before inviting users.
+## Remaining live release work
 
-The UI is implemented and locally buildable; live signup, cloud storage, remote execution, and public hosting have not been activated or verified.
+Configure Stripe prices, keys, webhook, and customer portal; configure desired OAuth providers, production email, phone/SMS and SSO; apply migrations with the coordinated app/API rollout; and supply the Vercel Sandbox snapshot. No live migration, production deployment, real charge, or provider-account configuration was performed in this change. Follow the two-account and end-to-end release checks in [deployment.md](deployment.md) before accepting paying learners.

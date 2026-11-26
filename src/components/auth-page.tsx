@@ -49,7 +49,7 @@ export function AuthPage({
           </h2>
           <p>
             {mode === "signup"
-              ? "Create an account to keep your code, notes, and progress together."
+              ? "Create your account, then choose a paid membership to unlock the learning workspace."
               : mode === "reset"
                 ? "Choose a new password for your account."
                 : "Pick up your code, your notes, and your next challenge."}
