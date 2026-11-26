@@ -27,3 +27,8 @@ __pycache__/
 tmp/
 temp/
 *.swp
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo

@@ -1,0 +1,427 @@
+{
+  "patterns": [
+    {
+      "id": "hashing",
+      "title": "Arrays & hashing",
+      "tagline": "Find what matters. Remember what you have seen.",
+      "description": "Hash maps turn repeated searching into fast lookups. Use them when you need counts, membership, or complements.",
+      "color": "purple"
+    },
+    {
+      "id": "two-pointers",
+      "title": "Two pointers",
+      "tagline": "Two positions. One clear direction.",
+      "description": "Move two indices through a sequence while maintaining an invariant. Particularly useful for sorted arrays and symmetric comparisons.",
+      "color": "blue"
+    },
+    {
+      "id": "sliding-window",
+      "title": "Sliding window",
+      "tagline": "Keep the useful work. Move the window.",
+      "description": "Reuse a running result as a contiguous range grows or shifts. Look for subarrays and substrings with a condition.",
+      "color": "orange"
+    },
+    {
+      "id": "stack",
+      "title": "Stacks",
+      "tagline": "Let the last thing guide the next thing.",
+      "description": "A stack remembers unfinished work. Use last-in, first-out ordering for nested structures and next-greater relationships.",
+      "color": "pink"
+    },
+    {
+      "id": "binary-search",
+      "title": "Binary search",
+      "tagline": "Make every decision cut the search in half.",
+      "description": "Search a sorted space by maintaining boundaries that always contain the answer. Decide precisely which half can be discarded.",
+      "color": "green"
+    },
+    {
+      "id": "dynamic-programming",
+      "title": "Dynamic programming",
+      "tagline": "Solve it once. Build on what you know.",
+      "description": "Describe a result in terms of smaller results, then store those results. Start with the state, transition, and base case.",
+      "color": "yellow"
+    }
+  ],
+  "problems": [
+    {
+      "id": "two-sum",
+      "title": "Two Sum",
+      "pattern": "hashing",
+      "difficulty": "Easy",
+      "minutes": 15,
+      "description": "Find two distinct indices whose values add up to the target. You may return the indices in either order. Every input has exactly one valid pair.",
+      "constraints": "nums is an array of 2\u201310,000 integers; target and values are between -1,000,000 and 1,000,000.",
+      "output": "An array containing the two zero-based indices.",
+      "example": {
+        "input": {
+          "nums": [
+            2,
+            7,
+            11,
+            15
+          ],
+          "target": 9
+        },
+        "output": [
+          0,
+          1
+        ]
+      },
+      "hints": [
+        "For each value, what other value would complete the pair?",
+        "Store values you have already visited alongside their indices. Look up the complement before inserting the current value."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n    Target int `json:\"target\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 1
+    },
+    {
+      "id": "contains-duplicate",
+      "title": "Contains Duplicate",
+      "pattern": "hashing",
+      "difficulty": "Easy",
+      "minutes": 10,
+      "description": "Determine whether any integer appears more than once in the array.",
+      "constraints": "nums contains 0\u201310,000 integers.",
+      "output": "true if there is a duplicate, otherwise false.",
+      "example": {
+        "input": {
+          "nums": [
+            1,
+            2,
+            3,
+            1
+          ]
+        },
+        "output": true
+      },
+      "hints": [
+        "What information do you need to remember after looking at a number?",
+        "Keep a set of values. A value already in the set is a duplicate."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 2
+    },
+    {
+      "id": "valid-palindrome",
+      "title": "Valid Palindrome",
+      "pattern": "two-pointers",
+      "difficulty": "Easy",
+      "minutes": 15,
+      "description": "Ignore spaces, punctuation, and letter case. Determine whether the remaining letters and digits read the same from both directions.",
+      "constraints": "text contains 0\u201310,000 ASCII characters.",
+      "output": "A boolean indicating whether the normalized text is a palindrome.",
+      "example": {
+        "input": {
+          "text": "A man, a plan, a canal: Panama"
+        },
+        "output": true
+      },
+      "hints": [
+        "Compare the outermost meaningful characters first.",
+        "Skip non-alphanumeric characters and move the two pointers toward the center."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Text string `json:\"text\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 3
+    },
+    {
+      "id": "sorted-squares",
+      "title": "Sorted Squares",
+      "pattern": "two-pointers",
+      "difficulty": "Easy",
+      "minutes": 15,
+      "description": "Return the square of every value in a sorted integer array, with the result also sorted in nondecreasing order. Aim for linear time.",
+      "constraints": "nums is sorted, has 0\u201310,000 elements, and each value is between -10,000 and 10,000.",
+      "output": "The sorted array of squares.",
+      "example": {
+        "input": {
+          "nums": [
+            -4,
+            -1,
+            0,
+            3,
+            10
+          ]
+        },
+        "output": [
+          0,
+          1,
+          9,
+          16,
+          100
+        ]
+      },
+      "hints": [
+        "The largest square must come from one of the two ends.",
+        "Fill the result from right to left, moving the pointer with the larger absolute value."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 4
+    },
+    {
+      "id": "max-window-sum",
+      "title": "Maximum Window Sum",
+      "pattern": "sliding-window",
+      "difficulty": "Easy",
+      "minutes": 15,
+      "description": "Find the largest sum of any contiguous subarray containing exactly k elements.",
+      "constraints": "1 \u2264 k \u2264 len(nums) \u2264 10,000. Values may be negative.",
+      "output": "The maximum sum as an integer.",
+      "example": {
+        "input": {
+          "nums": [
+            2,
+            1,
+            5,
+            1,
+            3,
+            2
+          ],
+          "k": 3
+        },
+        "output": 9
+      },
+      "hints": [
+        "What changes when a window moves by one position?",
+        "Subtract the departing number and add the incoming one. Initialize the best sum using a real window."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n    K int `json:\"k\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 5
+    },
+    {
+      "id": "longest-unique-substring",
+      "title": "Longest Unique Substring",
+      "pattern": "sliding-window",
+      "difficulty": "Medium",
+      "minutes": 25,
+      "description": "Find the length of the longest contiguous substring with no repeated characters.",
+      "constraints": "text contains 0\u201310,000 ASCII characters. Spaces count as characters.",
+      "output": "The length as an integer.",
+      "example": {
+        "input": {
+          "text": "abcabcbb"
+        },
+        "output": 3
+      },
+      "hints": [
+        "Keep a window in which every character is unique.",
+        "When a duplicate arrives, move the left edge past its previous occurrence without moving backwards."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Text string `json:\"text\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 6
+    },
+    {
+      "id": "valid-parentheses",
+      "title": "Valid Parentheses",
+      "pattern": "stack",
+      "difficulty": "Easy",
+      "minutes": 15,
+      "description": "Decide whether every opening bracket has the matching closing bracket in the correct nested order.",
+      "constraints": "text contains only (, ), [, ], {, } and has 0\u201310,000 characters.",
+      "output": "true for valid nesting, otherwise false.",
+      "example": {
+        "input": {
+          "text": "([]){}"
+        },
+        "output": true
+      },
+      "hints": [
+        "Which opening bracket must a closing bracket match?",
+        "Push opening brackets. Each closing bracket must match the top of the stack, and the stack must be empty at the end."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Text string `json:\"text\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 7
+    },
+    {
+      "id": "next-greater-element",
+      "title": "Next Greater Element",
+      "pattern": "stack",
+      "difficulty": "Medium",
+      "minutes": 25,
+      "description": "For each array position, return the first strictly greater value to its right. Use -1 when no such value exists.",
+      "constraints": "nums contains 0\u201310,000 nonnegative integers.",
+      "output": "An array of next-greater values in the original order.",
+      "example": {
+        "input": {
+          "nums": [
+            2,
+            1,
+            2,
+            4,
+            3
+          ]
+        },
+        "output": [
+          4,
+          2,
+          4,
+          -1,
+          -1
+        ]
+      },
+      "hints": [
+        "Keep track of positions that are still waiting for a larger value.",
+        "A decreasing stack lets one new value resolve several earlier positions."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 8
+    },
+    {
+      "id": "binary-search",
+      "title": "Binary Search",
+      "pattern": "binary-search",
+      "difficulty": "Easy",
+      "minutes": 15,
+      "description": "Find the index of target in a sorted array of distinct integers. Return -1 if it is absent. Use logarithmic time.",
+      "constraints": "nums contains 0\u201310,000 distinct sorted integers.",
+      "output": "The zero-based index, or -1.",
+      "example": {
+        "input": {
+          "nums": [
+            -1,
+            0,
+            3,
+            5,
+            9,
+            12
+          ],
+          "target": 9
+        },
+        "output": 4
+      },
+      "hints": [
+        "After comparing the middle element, which half cannot contain the target?",
+        "Keep inclusive low and high bounds. Each iteration must shrink the interval."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n    Target int `json:\"target\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 9
+    },
+    {
+      "id": "first-occurrence",
+      "title": "First Occurrence",
+      "pattern": "binary-search",
+      "difficulty": "Medium",
+      "minutes": 20,
+      "description": "Return the first index of target in a sorted array that may contain duplicates. Return -1 if the target is absent. Aim for logarithmic time.",
+      "constraints": "nums contains 0\u201310,000 sorted integers.",
+      "output": "The first zero-based index of target, or -1.",
+      "example": {
+        "input": {
+          "nums": [
+            1,
+            2,
+            2,
+            2,
+            3
+          ],
+          "target": 2
+        },
+        "output": 1
+      },
+      "hints": [
+        "Finding a match does not mean you have found the first match.",
+        "Remember a match and continue searching to its left."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n    Target int `json:\"target\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 10
+    },
+    {
+      "id": "climbing-stairs",
+      "title": "Climbing Stairs",
+      "pattern": "dynamic-programming",
+      "difficulty": "Easy",
+      "minutes": 15,
+      "description": "You can climb one or two steps at a time. Count the distinct sequences of moves that reach exactly n steps. For zero steps, count the empty sequence as one way.",
+      "constraints": "0 \u2264 n \u2264 40.",
+      "output": "The number of ways as an integer.",
+      "example": {
+        "input": {
+          "n": 4
+        },
+        "output": 5
+      },
+      "hints": [
+        "The last move must come from either one step below or two steps below.",
+        "ways(n) = ways(n - 1) + ways(n - 2). You only need to keep the previous two results."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    N int `json:\"n\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 11
+    },
+    {
+      "id": "max-non-adjacent-sum",
+      "title": "Non-adjacent Sum",
+      "pattern": "dynamic-programming",
+      "difficulty": "Medium",
+      "minutes": 25,
+      "description": "Choose elements from an array to maximize their sum, without choosing adjacent positions. You may choose no elements.",
+      "constraints": "nums contains 0\u201310,000 nonnegative integers.",
+      "output": "The largest possible sum as an integer.",
+      "example": {
+        "input": {
+          "nums": [
+            2,
+            7,
+            9,
+            3,
+            1
+          ]
+        },
+        "output": 12
+      },
+      "hints": [
+        "At each position, you can either take this value or skip it.",
+        "Compare the best previous sum with this value plus the best sum ending two positions earlier."
+      ],
+      "starters": {
+        "go": "package main\n\nimport (\n    \"encoding/json\"\n    \"os\"\n)\n\ntype Input struct {\n    Nums []int `json:\"nums\"`\n}\n\nfunc solve(input Input) interface{} {\n    // Your approach starts here.\n    return nil\n}\n\nfunc main() {\n    var input Input\n    if err := json.NewDecoder(os.Stdin).Decode(&input); err != nil {\n        panic(err)\n    }\n    json.NewEncoder(os.Stdout).Encode(solve(input))\n}\n",
+        "python": "import json\nimport sys\n\ndef solve(data):\n    # Your approach starts here.\n    return None\n\nif __name__ == \"__main__\":\n    data = json.load(sys.stdin)\n    print(json.dumps(solve(data)))\n",
+        "javascript": "const fs = require(\"fs\");\n\nfunction solve(input) {\n  // Your approach starts here.\n  return null;\n}\n\nconst input = JSON.parse(fs.readFileSync(0, \"utf8\"));\nconsole.log(JSON.stringify(solve(input)));\n"
+      },
+      "order": 12
+    }
+  ]
+}
